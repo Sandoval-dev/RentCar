@@ -42,6 +42,12 @@ namespace RentCar.Persistence.Repositories.RentedCarRepositories
             return result;
         }
 
+        public async Task<List<RentedCar>> GetRentedCarsByUserId(int userId)
+        {
+            var value= await _context.RentedCars.Where(x => x.UserId == userId).ToListAsync();
+            return value;
+        }
+
         public async Task UpdateRentedCarAsync(RentedCar entity)
         {
             _context.RentedCars.Update(entity);

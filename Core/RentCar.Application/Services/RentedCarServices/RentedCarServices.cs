@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using RentCar.Application.Dtos.RentedCarDtos;
+using RentCar.Application.Dtos.UserDtos;
 using RentCar.Domain.Entities;
 using RentCar.Persistence.Repositories.CarRepositories;
 using RentCar.Persistence.Repositories.RentedCarRepositories;
@@ -53,16 +54,7 @@ namespace RentCar.Application.Services.RentedCarServices
             var users = await _userRepository.GetAllUsersAsync();
             var cars = await _carRepository.GetAllCarsAsync();
             var result=new List<ResultRentedCarDto>();
-            //var result = rentedCars.Select(x=>new ResultRentedCarDto
-            //{
-            //    UserId = x.UserId,
-            //    CarId = x.CarId,
-            //    StartDate = x.StartDate,
-            //    EndDate = x.EndDate,
-            //    TotalPrice = x.TotalPrice,
-            //    DamagePrice = x.DamagePrice,
-            //    isCompleted = x.isCompleted
-            //}).ToList();
+
             foreach (var rentedCar in value)
             {
                 var user=await _userRepository.GetByIdUserAsync(rentedCar.UserId);
@@ -77,7 +69,17 @@ namespace RentCar.Application.Services.RentedCarServices
                     DamagePrice = rentedCar.DamagePrice,
                     isCompleted = rentedCar.isCompleted
                 };
-                //newRentedCar.User = user;
+                newRentedCar.User = new OnlyInfoUserDto
+                {
+                    Id = user.Id,
+                    Name = user.Name,
+                    Surname = user.Surname,
+                    Email = user.Email,
+                    Phone = user.Phone,
+                    Password = user.Password,
+                    Role = user.Role
+                };
+
                 newRentedCar.Car = car;
                 result.Add(newRentedCar);
             }
@@ -87,6 +89,8 @@ namespace RentCar.Application.Services.RentedCarServices
         public async Task<GetByIdRentedCarDto> GetByIdRentedCar(int id)
         {
             var value = await _repository.GetByIdRentedCarAsync(id);
+            var user = await _userRepository.GetByIdUserAsync(value.UserId);
+            var car = await _carRepository.GetByIdCarAsync(value.CarId);
             var result = new GetByIdRentedCarDto
             {
                 Id = value.Id,
@@ -98,6 +102,17 @@ namespace RentCar.Application.Services.RentedCarServices
                 DamagePrice = value.DamagePrice,
                 isCompleted = value.isCompleted
             };
+            result.User = new OnlyInfoUserDto
+            {
+                Id = user.Id,
+                Name = user.Name,
+                Surname = user.Surname,
+                Email = user.Email,
+                Phone = user.Phone,
+                Password = user.Password,
+                Role = user.Role
+            };
+            result.Car = car;
             return result;
         }
 

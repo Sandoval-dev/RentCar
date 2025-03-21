@@ -1,5 +1,8 @@
-﻿using RentCar.Application.Dtos.UserDtos;
+﻿using RentCar.Application.Dtos.RentedCarDtos;
+using RentCar.Application.Dtos.UserDtos;
 using RentCar.Domain.Entities;
+using RentCar.Persistence.Repositories.CarRepositories;
+using RentCar.Persistence.Repositories.RentedCarRepositories;
 using RentCar.Persistence.Repositories.UserRepositories;
 using System;
 using System.Collections.Generic;
@@ -12,10 +15,14 @@ namespace RentCar.Application.Services.UserServices
     public class UserServices : IUserServices
     {
         private readonly IUserRepository _repository;
+        private readonly IRentedCarRepository _rentedCarRepository;
+        private readonly ICarRepository _carRepository;
 
-        public UserServices(IUserRepository repository)
+        public UserServices(IUserRepository repository, IRentedCarRepository rentedCarRepository, ICarRepository carRepository)
         {
             _repository = repository;
+            _rentedCarRepository = rentedCarRepository;
+            _carRepository = carRepository;
         }
         public async Task CreateUser(CreateUserDto dto)
         {
@@ -41,17 +48,42 @@ namespace RentCar.Application.Services.UserServices
         public async Task<List<ResultUserDto>> GetAllUsers()
         {
             var users=await _repository.GetAllUsersAsync();
-            var result = users.Select(x => new ResultUserDto
+            var result = new List<ResultUserDto>();
+
+            foreach (var user in users)
             {
-                Id = x.Id,
-                Name = x.Name,
-                Surname = x.Surname,
-                Email = x.Email,
-                Phone = x.Phone,
-                Password = x.Password,
-                Role = x.Role,
-                RentedCars = new List<RentedCar>()
-            }).ToList();
+                var newuser = new ResultUserDto
+                {
+                    Id = user.Id,
+                    Name = user.Name,
+                    Surname = user.Surname,
+                    Email = user.Email,
+                    Phone = user.Phone,
+                    Password = user.Password,
+                    Role = user.Role,
+
+                };
+                var usersrents=await _rentedCarRepository.GetRentedCarsByUserId(user.Id);
+                var onlyinforent=new List<OnlyInfoRentedCarDto>();
+                foreach (var userrent in usersrents)
+                {
+
+                    var newonlyinforent=new OnlyInfoRentedCarDto
+                    {
+                        Id = userrent.Id,
+                        CarId = userrent.CarId,
+                        StartDate = userrent.StartDate,
+                        EndDate = userrent.EndDate,
+                        TotalPrice = userrent.TotalPrice,
+                        DamagePrice = userrent.DamagePrice,
+                        isCompleted = userrent.isCompleted
+                    };
+                    newonlyinforent.Car = await _carRepository.GetByIdCarAsync(userrent.CarId);
+                    onlyinforent.Add(newonlyinforent);
+                }
+                newuser.RentedCars = onlyinforent;
+                result.Add(newuser);
+            }
             return result;
         }
 
